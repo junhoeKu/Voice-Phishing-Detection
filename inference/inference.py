@@ -294,92 +294,27 @@ def create_gradio_interface(
 def main():
     """메인 함수"""
     parser = argparse.ArgumentParser(description="보이스피싱 탐지 추론")
-    parser.add_argument(
-        "--base_model",
-        type=str,
-        default="Qwen/Qwen2.5-0.5B-Instruct",
-        help="기본 모델 경로"
-    )
-    parser.add_argument(
-        "--adapter_path",
-        type=str,
-        default="model/model_qwen_cls_bt_all_512_25",
-        help="어댑터 경로 (상대경로)"
-    )
-    parser.add_argument(
-        "--cache_dir",
-        type=str,
-        default="cache",
-        help="캐시 디렉토리 경로 (상대경로)"
-    )
-    parser.add_argument(
-        "--device",
-        type=str,
-        default=None,
-        help="디바이스 (cuda/cpu, None이면 자동 선택)"
-    )
-    parser.add_argument(
-        "--hf_token",
-        type=str,
-        default="",
-        help="Hugging Face 토큰 (환경변수 HUGGINGFACE_TOKEN에서도 읽을 수 있음)"
-    )
-    parser.add_argument(
-        "--no_merge",
-        action="store_true",
-        help="어댑터 병합하지 않기"
-    )
-    parser.add_argument(
-        "--share",
-        action="store_true",
-        help="Gradio 공유 링크 생성"
-    )
-    parser.add_argument(
-        "--server_name",
-        type=str,
-        default="127.0.0.1",
-        help="서버 주소"
-    )
-    parser.add_argument(
-        "--server_port",
-        type=int,
-        default=7860,
-        help="서버 포트"
-    )
-    
+    parser.add_argument("--base_model", type=str, default="Qwen/Qwen2.5-0.5B-Instruct", help="기본 모델 경로")
+    parser.add_argument("--adapter_path", type=str, default="model/model_qwen_cls_bt_all_512_25", help="어댑터 경로 (상대경로)")
+    parser.add_argument("--cache_dir", type=str, default="cache", help="캐시 디렉토리 경로 (상대경로)")
+    parser.add_argument("--device", type=str, default=None, help="디바이스 (cuda/cpu, None이면 자동 선택)")
+    parser.add_argument("--hf_token", type=str, default="", help="Hugging Face 토큰 (환경변수 HUGGINGFACE_TOKEN에서도 읽을 수 있음)")
+    parser.add_argument("--no_merge", action="store_true", help="어댑터 병합하지 않기")
+    parser.add_argument("--share", action="store_true", help="Gradio 공유 링크 생성")
+    parser.add_argument("--server_name", type=str, default="127.0.0.1", help="서버 주소")
+    parser.add_argument("--server_port", type=int, default=7860, help="서버 포트")
     args = parser.parse_args()
     
-    # Hugging Face 토큰 설정 (환경변수 우선)
     hf_token = os.getenv("HUGGINGFACE_TOKEN", args.hf_token)
-    
-    # 환경 설정
     setup_environment(args.cache_dir, hf_token)
-    
-    # 모델 로드
     classifier_model, generator_model, tokenizer = load_models(
-        base_model_path=args.base_model,
-        adapter_path=args.adapter_path,
-        cache_dir=args.cache_dir,
-        device=args.device,
-        merge_adapter=not args.no_merge
+        base_model_path=args.base_model, adapter_path=args.adapter_path, cache_dir=args.cache_dir,
+        device=args.device, merge_adapter=not args.no_merge
     )
-    
     device = args.device if args.device else ("cuda" if torch.cuda.is_available() else "cpu")
-    
-    # Gradio 인터페이스 생성 및 실행
     print("🚀 Gradio 인터페이스 시작 중...")
-    interface = create_gradio_interface(
-        classifier_model,
-        generator_model,
-        tokenizer,
-        device
-    )
-    
-    interface.launch(
-        share=args.share,
-        server_name=args.server_name,
-        server_port=args.server_port
-    )
+    interface = create_gradio_interface(classifier_model, generator_model, tokenizer, device)
+    interface.launch(share=args.share, server_name=args.server_name, server_port=args.server_port)
 
 
 if __name__ == "__main__":

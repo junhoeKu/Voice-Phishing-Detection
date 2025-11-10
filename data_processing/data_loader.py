@@ -179,32 +179,19 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser(description="데이터셋을 train, validation, test로 분할")
-    parser.add_argument("--input", type=str, default="dataset/total_dataset.csv",
-                        help="입력 CSV 파일 경로 (상대경로)")
-    parser.add_argument("--output_dir", type=str, default="dataset",
-                        help="출력 디렉토리 경로 (상대경로)")
-    parser.add_argument("--text_column", type=str, default="text",
-                        help="텍스트 컬럼명")
-    parser.add_argument("--label_column", type=str, default="label",
-                        help="라벨 컬럼명")
-    parser.add_argument("--train_ratio", type=float, default=0.7,
-                        help="학습 데이터 비율")
-    parser.add_argument("--val_ratio", type=float, default=0.15,
-                        help="검증 데이터 비율")
-    parser.add_argument("--test_ratio", type=float, default=0.15,
-                        help="테스트 데이터 비율")
-    parser.add_argument("--seed", type=int, default=42,
-                        help="난수 시드")
-    parser.add_argument("--train_filename", type=str, default="total_dataset_train.csv",
-                        help="학습 데이터 파일명")
-    parser.add_argument("--val_filename", type=str, default="total_dataset_val.csv",
-                        help="검증 데이터 파일명")
-    parser.add_argument("--test_filename", type=str, default="total_dataset_test.csv",
-                        help="테스트 데이터 파일명")
-    
+    parser.add_argument("--input", type=str, default="dataset/total_dataset.csv", help="입력 CSV 파일 경로 (상대경로)")
+    parser.add_argument("--output_dir", type=str, default="dataset", help="출력 디렉토리 경로 (상대경로)")
+    parser.add_argument("--text_column", type=str, default="text", help="텍스트 컬럼명")
+    parser.add_argument("--label_column", type=str, default="label", help="라벨 컬럼명")
+    parser.add_argument("--train_ratio", type=float, default=0.7, help="학습 데이터 비율")
+    parser.add_argument("--val_ratio", type=float, default=0.15, help="검증 데이터 비율")
+    parser.add_argument("--test_ratio", type=float, default=0.15, help="테스트 데이터 비율")
+    parser.add_argument("--seed", type=int, default=42, help="난수 시드")
+    parser.add_argument("--train_filename", type=str, default="total_dataset_train.csv", help="학습 데이터 파일명")
+    parser.add_argument("--val_filename", type=str, default="total_dataset_val.csv", help="검증 데이터 파일명")
+    parser.add_argument("--test_filename", type=str, default="total_dataset_test.csv", help="테스트 데이터 파일명")
     args = parser.parse_args()
     
-    # 비율 합계 확인
     total_ratio = args.train_ratio + args.val_ratio + args.test_ratio
     if abs(total_ratio - 1.0) > 0.01:
         print(f"⚠️ 경고: 비율의 합이 1.0이 아닙니다 ({total_ratio}). 정규화합니다.")
@@ -214,21 +201,12 @@ if __name__ == "__main__":
     
     try:
         train_dataset, val_dataset, test_dataset = split_dataset(
-            input_csv_path=args.input,
-            output_dir=args.output_dir,
-            text_column=args.text_column,
-            label_column=args.label_column,
-            train_ratio=args.train_ratio,
-            val_ratio=args.val_ratio,
-            test_ratio=args.test_ratio,
-            seed=args.seed,
-            train_filename=args.train_filename,
-            val_filename=args.val_filename,
-            test_filename=args.test_filename
+            input_csv_path=args.input, output_dir=args.output_dir, text_column=args.text_column,
+            label_column=args.label_column, train_ratio=args.train_ratio, val_ratio=args.val_ratio,
+            test_ratio=args.test_ratio, seed=args.seed, train_filename=args.train_filename,
+            val_filename=args.val_filename, test_filename=args.test_filename
         )
-        
         print("\n✅ 데이터셋 분할 완료! 이제 train.py를 실행할 수 있습니다.")
-        
     except FileNotFoundError as e:
         print(f"❌ 오류: {e}")
     except ValueError as e:

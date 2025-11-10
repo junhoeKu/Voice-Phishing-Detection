@@ -312,60 +312,30 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser(description="보이스피싱 탐지 모델 학습")
-    parser.add_argument("--train_data", type=str, default="dataset/bt_all_512_25.csv",
-                        help="학습 데이터 CSV 파일 경로 (상대경로)")
-    parser.add_argument("--val_data", type=str, default="dataset/total_dataset_val.csv",
-                        help="검증 데이터 CSV 파일 경로 (상대경로)")
-    parser.add_argument("--model_save", type=str, default="model/model_synatra_bt_all_512_25",
-                        help="모델 저장 경로 (상대경로)")
-    parser.add_argument("--output_dir", type=str, default="results/voicephishing",
-                        help="출력 디렉토리 경로 (상대경로)")
-    parser.add_argument("--log_dir", type=str, default="logs/voicephishing",
-                        help="로그 디렉토리 경로 (상대경로)")
-    parser.add_argument("--model_name", type=str, default="maywell/Synatra-42dot-1.3B",
-                        help="모델 이름")
-    parser.add_argument("--cache_dir", type=str, default="cache",
-                        help="캐시 디렉토리 경로 (상대경로)")
-    parser.add_argument("--num_labels", type=int, default=2,
-                        help="분류 레이블 수")
-    parser.add_argument("--learning_rate", type=float, default=2e-5,
-                        help="학습률")
-    parser.add_argument("--num_epochs", type=int, default=5,
-                        help="학습 에포크 수")
-    parser.add_argument("--batch_size", type=int, default=16,
-                        help="디바이스당 배치 크기")
-    parser.add_argument("--max_length", type=int, default=1024,
-                        help="최대 시퀀스 길이")
-    parser.add_argument("--lora_r", type=int, default=16,
-                        help="LoRA rank")
-    parser.add_argument("--lora_alpha", type=int, default=32,
-                        help="LoRA alpha")
-    parser.add_argument("--lora_dropout", type=float, default=0.2,
-                        help="LoRA dropout")
-    parser.add_argument("--hf_token", type=str, default="",
-                        help="Hugging Face 토큰 (환경변수 HUGGINGFACE_TOKEN 사용 가능)")
-    
+    parser.add_argument("--train_data", type=str, default="dataset/bt_all_512_25.csv", help="학습 데이터 CSV 파일 경로 (상대경로)")
+    parser.add_argument("--val_data", type=str, default="dataset/total_dataset_val.csv", help="검증 데이터 CSV 파일 경로 (상대경로)")
+    parser.add_argument("--model_save", type=str, default="model/model_synatra_bt_all_512_25", help="모델 저장 경로 (상대경로)")
+    parser.add_argument("--output_dir", type=str, default="results/voicephishing", help="출력 디렉토리 경로 (상대경로)")
+    parser.add_argument("--log_dir", type=str, default="logs/voicephishing", help="로그 디렉토리 경로 (상대경로)")
+    parser.add_argument("--model_name", type=str, default="maywell/Synatra-42dot-1.3B", help="모델 이름")
+    parser.add_argument("--cache_dir", type=str, default="cache", help="캐시 디렉토리 경로 (상대경로)")
+    parser.add_argument("--num_labels", type=int, default=2, help="분류 레이블 수")
+    parser.add_argument("--learning_rate", type=float, default=2e-5, help="학습률")
+    parser.add_argument("--num_epochs", type=int, default=5, help="학습 에포크 수")
+    parser.add_argument("--batch_size", type=int, default=16, help="디바이스당 배치 크기")
+    parser.add_argument("--max_length", type=int, default=1024, help="최대 시퀀스 길이")
+    parser.add_argument("--lora_r", type=int, default=16, help="LoRA rank")
+    parser.add_argument("--lora_alpha", type=int, default=32, help="LoRA alpha")
+    parser.add_argument("--lora_dropout", type=float, default=0.2, help="LoRA dropout")
+    parser.add_argument("--hf_token", type=str, default="", help="Hugging Face 토큰 (환경변수 HUGGINGFACE_TOKEN 사용 가능)")
     args = parser.parse_args()
     
-    # 환경변수에서 토큰 가져오기
     hf_token = args.hf_token or os.getenv("HUGGINGFACE_TOKEN", "")
-    
     fine_tune_model(
-        train_data_path=args.train_data,
-        val_data_path=args.val_data,
-        model_save_path=args.model_save,
-        output_dir=args.output_dir,
-        log_dir=args.log_dir,
-        model_name=args.model_name,
-        cache_dir=args.cache_dir,
-        num_labels=args.num_labels,
-        learning_rate=args.learning_rate,
-        num_train_epochs=args.num_epochs,
-        per_device_train_batch_size=args.batch_size,
-        max_length=args.max_length,
-        lora_r=args.lora_r,
-        lora_alpha=args.lora_alpha,
-        lora_dropout=args.lora_dropout,
-        hf_token=hf_token
+        train_data_path=args.train_data, val_data_path=args.val_data, model_save_path=args.model_save,
+        output_dir=args.output_dir, log_dir=args.log_dir, model_name=args.model_name, cache_dir=args.cache_dir,
+        num_labels=args.num_labels, learning_rate=args.learning_rate, num_train_epochs=args.num_epochs,
+        per_device_train_batch_size=args.batch_size, max_length=args.max_length, lora_r=args.lora_r,
+        lora_alpha=args.lora_alpha, lora_dropout=args.lora_dropout, hf_token=hf_token
     )
 

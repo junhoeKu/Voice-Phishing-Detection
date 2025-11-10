@@ -1,0 +1,453 @@
+"""
+LSTM 모델 학습 및 평가
+
+BERT 토크나이저와 LSTM을 사용하여 보이스피싱 탐지 모델을 학습합니다.
+5회 실행의 평균 성능을 계산하고 평가합니다.
+
+사용 예시:
+    python train/lstm_train.py --data dataset/total_dataset.csv
+"""
+
+import os
+import random
+import argparse
+import pandas as pd
+import numpy as np
+import torch
+import torch.nn as nn
+from pathlib import Path
+from torch.utils.data import Dataset, DataLoader
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, classification_report
+from tqdm import tqdm
+from transformers import BertTokenizer
+import wandb
+
+
+def set_seed(seed_value: int = 42):
+    """난수 시드 고정"""
+    random.seed(seed_value)
+    np.random.seed(seed_value)
+    torch.manual_seed(seed_value)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed_value)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+
+def load_data(data_path: str, text_column: str = "text", label_column: str = "label"):
+    """
+    데이터 로드
+    
+    Args:
+        data_path: 데이터 파일 경로 (상대경로)
+        text_column: 텍스트 컬럼명
+        label_column: 라벨 컬럼명
+        
+    Returns:
+        (X, y) 튜플
+    """
+    base_path = Path(__file__).parent.parent
+    full_path = base_path / data_path
+    
+    if not full_path.exists():
+        raise FileNotFoundError(f"데이터 파일을 찾을 수 없습니다: {full_path}")
+    
+    df = pd.read_csv(full_path)
+    df = df.dropna(subset=[text_column, label_column])
+    
+    X = df[text_column].astype(str)
+    y = df[label_column].astype(int)
+    
+    print(f"📊 전체 데이터: {len(df)}개")
+    return X, y
+
+
+def encode_texts(texts, tokenizer, max_len):
+    """텍스트 인코딩"""
+    input_ids, attention_masks = [], []
+    for text in texts:
+        encoded = tokenizer.encode_plus(
+            text,
+            add_special_tokens=True,
+            max_length=max_len,
+            padding="max_length",
+            truncation=True,
+            return_attention_mask=True,
+            return_tensors="pt"
+        )
+        input_ids.append(encoded["input_ids"])
+        attention_masks.append(encoded["attention_mask"])
+    return torch.cat(input_ids, dim=0), torch.cat(attention_masks, dim=0)
+
+
+class LSTMDataset(Dataset):
+    """LSTM용 데이터셋"""
+    def __init__(self, inputs, masks, labels):
+        self.inputs = inputs
+        self.masks = masks
+        self.labels = labels
+
+    def __len__(self):
+        return len(self.inputs)
+
+    def __getitem__(self, idx):
+        return {
+            "input_ids": self.inputs[idx],
+            "attention_mask": self.masks[idx],
+            "labels": self.labels[idx]
+        }
+
+
+class LSTMClassifier(nn.Module):
+    """LSTM 분류기 모델"""
+    def __init__(self, vocab_size, embed_dim=128, hidden_dim=256, num_layers=2, dropout=0.3):
+        super(LSTMClassifier, self).__init__()
+        self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=0)
+        self.lstm = nn.LSTM(
+            embed_dim,
+            hidden_dim,
+            num_layers=num_layers,
+            batch_first=True,
+            dropout=dropout,
+            bidirectional=True
+        )
+        self.fc = nn.Sequential(
+            nn.Linear(hidden_dim * 2, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(hidden_dim, 1),
+            nn.Sigmoid()
+        )
+
+    def forward(self, input_ids, attention_mask):
+        embedded = self.embedding(input_ids)
+        packed_output, (hidden, cell) = self.lstm(embedded)
+        hidden_cat = torch.cat((hidden[-2], hidden[-1]), dim=1)  # bidirectional
+        output = self.fc(hidden_cat)
+        return output.squeeze()
+
+
+def evaluate(model, dataloader, criterion, device):
+    """모델 평가"""
+    model.eval()
+    preds, targets = [], []
+    total_loss = 0.0
+    with torch.no_grad():
+        for batch in dataloader:
+            input_ids = batch["input_ids"].to(device)
+            attention_mask = batch["attention_mask"].to(device)
+            labels = batch["labels"].to(device)
+            outputs = model(input_ids, attention_mask)
+            loss = criterion(outputs, labels.float())
+            total_loss += loss.item() * input_ids.size(0)
+            preds.extend((outputs > 0.5).long().cpu().numpy())
+            targets.extend(labels.long().cpu().numpy())
+    avg_loss = total_loss / len(dataloader.dataset) if len(dataloader.dataset) > 0 else 0.0
+    acc = accuracy_score(targets, preds)
+    f1 = f1_score(targets, preds, zero_division=0)
+    precision = precision_score(targets, preds, zero_division=0)
+    recall = recall_score(targets, preds, zero_division=0)
+    return avg_loss, acc, f1, precision, recall, targets, preds
+
+
+def train_and_evaluate(
+    X_all,
+    y_all,
+    num_runs: int = 5,
+    embed_dim: int = 128,
+    hidden_dim: int = 256,
+    num_layers: int = 2,
+    dropout: float = 0.3,
+    batch_size: int = 16,
+    eval_batch_size: int = 32,
+    learning_rate: float = 2e-4,
+    epochs: int = 10,
+    max_len: int = 1024,
+    seed: int = 42,
+    device: str = None
+):
+    """
+    모델 학습 및 평가
+    
+    Args:
+        X_all: 전체 텍스트 데이터
+        y_all: 전체 라벨 데이터
+        num_runs: 실행 횟수
+        embed_dim: 임베딩 차원
+        hidden_dim: 히든 차원
+        num_layers: LSTM 레이어 수
+        dropout: 드롭아웃 비율
+        batch_size: 배치 크기
+        eval_batch_size: 평가 배치 크기
+        learning_rate: 학습률
+        epochs: 에포크 수
+        max_len: 최대 길이
+        seed: 시드 값
+        device: 디바이스
+        
+    Returns:
+        (모델, 토크나이저, 평가_결과) 튜플
+    """
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+    print(f"📱 디바이스: {device}")
+    
+    # 토크나이저 로드
+    tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-cased")
+    vocab_size = tokenizer.vocab_size
+    
+    val_metrics = {"accuracy": [], "precision": [], "recall": [], "f1": []}
+    test_metrics = {"accuracy": [], "precision": [], "recall": [], "f1": []}
+    
+    last_model = None
+    
+    for run_idx in range(num_runs):
+        run_seed = seed + run_idx
+        set_seed(run_seed)
+        
+        # 데이터 분할: 70% train, 30% temp
+        X_train_texts, X_temp_texts, y_train, y_temp = train_test_split(
+            X_all,
+            y_all,
+            test_size=0.30,
+            random_state=run_seed,
+            stratify=y_all
+        )
+        
+        # temp을 15% val, 15% test로 분할
+        X_val_texts, X_test_texts, y_val, y_test = train_test_split(
+            X_temp_texts,
+            y_temp,
+            test_size=0.50,
+            random_state=run_seed,
+            stratify=y_temp
+        )
+        
+        print(f"[Run {run_idx+1}] Train: {len(X_train_texts)}, Val: {len(X_val_texts)}, Test: {len(X_test_texts)}")
+        
+        # 인코딩
+        train_inputs, train_masks = encode_texts(X_train_texts.tolist(), tokenizer, max_len)
+        val_inputs, val_masks = encode_texts(X_val_texts.tolist(), tokenizer, max_len)
+        test_inputs, test_masks = encode_texts(X_test_texts.tolist(), tokenizer, max_len)
+        
+        train_labels_tensor = torch.tensor(y_train.tolist(), dtype=torch.float32)
+        val_labels_tensor = torch.tensor(y_val.tolist(), dtype=torch.float32)
+        test_labels_tensor = torch.tensor(y_test.tolist(), dtype=torch.float32)
+        
+        # Dataset / DataLoader
+        train_dataset = LSTMDataset(train_inputs, train_masks, train_labels_tensor)
+        val_dataset = LSTMDataset(val_inputs, val_masks, val_labels_tensor)
+        test_dataset = LSTMDataset(test_inputs, test_masks, test_labels_tensor)
+        
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+        val_loader = DataLoader(val_dataset, batch_size=eval_batch_size)
+        test_loader = DataLoader(test_dataset, batch_size=eval_batch_size)
+        
+        # 모델 생성
+        model = LSTMClassifier(
+            vocab_size=vocab_size,
+            embed_dim=embed_dim,
+            hidden_dim=hidden_dim,
+            num_layers=num_layers,
+            dropout=dropout
+        ).to(device)
+        
+        criterion = nn.BCELoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+        
+        # 학습 루프
+        best_f1 = 0.0
+        best_model_state = None
+        
+        for epoch in range(epochs):
+            model.train()
+            total_train_loss = 0.0
+            loop = tqdm(train_loader, desc=f"Run {run_idx+1} | Epoch {epoch+1}")
+            
+            for batch in loop:
+                input_ids = batch["input_ids"].to(device)
+                attention_mask = batch["attention_mask"].to(device)
+                labels = batch["labels"].to(device)
+                
+                optimizer.zero_grad()
+                outputs = model(input_ids, attention_mask)
+                loss = criterion(outputs, labels)
+                
+                if torch.isnan(loss):
+                    print("⚠️ NaN loss detected. Skipping batch.")
+                    continue
+                
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                optimizer.step()
+                
+                total_train_loss += loss.item() * input_ids.size(0)
+                loop.set_postfix(train_loss=f"{loss.item():.4f}")
+            
+            avg_train_loss = total_train_loss / len(train_loader.dataset) if len(train_loader.dataset) > 0 else 0.0
+            
+            # Validation 평가
+            val_loss, val_acc, val_f1, val_precision, val_recall, _, _ = evaluate(model, val_loader, criterion, device)
+            
+            wandb.log({
+                "run_idx": run_idx + 1,
+                "epoch": epoch + 1,
+                "train_loss": avg_train_loss,
+                "val_loss": val_loss,
+                "val_accuracy": val_acc,
+                "val_f1": val_f1,
+                "val_precision": val_precision,
+                "val_recall": val_recall
+            })
+            
+            print(f"Run {run_idx+1} Epoch {epoch+1} -> Train Loss: {avg_train_loss:.4f} | Val Loss: {val_loss:.4f} | Val F1: {val_f1:.4f}")
+            
+            if val_f1 > best_f1:
+                best_f1 = val_f1
+                best_model_state = model.state_dict().copy()
+                print(f"Run {run_idx+1} Best model saved! (Val F1: {best_f1:.4f})")
+        
+        # Best 모델 로드 후 평가
+        if best_model_state is not None:
+            model.load_state_dict(best_model_state)
+            last_model = model
+        
+        # Validation 최종 평가
+        val_loss, val_acc, val_f1, val_precision, val_recall, val_targets, val_preds = evaluate(model, val_loader, criterion, device)
+        print(f"\n--- [Run {run_idx+1}] Validation Set Results ---")
+        print(classification_report(val_targets, val_preds))
+        print(f"[Run {run_idx+1}] Val Loss: {val_loss:.4f} | Val Acc: {val_acc:.4f} | Val F1: {val_f1:.4f} | Val Precision: {val_precision:.4f} | Val Recall: {val_recall:.4f}")
+        
+        wandb.log({
+            "run_idx": run_idx + 1,
+            "final_val_loss": val_loss,
+            "final_val_accuracy": val_acc,
+            "final_val_f1": val_f1,
+            "final_val_precision": val_precision,
+            "final_val_recall": val_recall
+        })
+        
+        val_metrics["accuracy"].append(val_acc)
+        val_metrics["precision"].append(val_precision)
+        val_metrics["recall"].append(val_recall)
+        val_metrics["f1"].append(val_f1)
+        
+        # Test 평가
+        test_loss, test_acc, test_f1, test_precision, test_recall, test_targets, test_preds = evaluate(model, test_loader, criterion, device)
+        print(f"\n--- [Run {run_idx+1}] Test Set Results (Final) ---")
+        print(classification_report(test_targets, test_preds))
+        print(f"[Run {run_idx+1}] Test Loss: {test_loss:.4f} | Test Acc: {test_acc:.4f} | Test F1: {test_f1:.4f} | Test Precision: {test_precision:.4f} | Test Recall: {test_recall:.4f}")
+        
+        wandb.log({
+            "run_idx": run_idx + 1,
+            "test_loss": test_loss,
+            "test_accuracy": test_acc,
+            "test_f1": test_f1,
+            "test_precision": test_precision,
+            "test_recall": test_recall
+        })
+        
+        test_metrics["accuracy"].append(test_acc)
+        test_metrics["precision"].append(test_precision)
+        test_metrics["recall"].append(test_recall)
+        test_metrics["f1"].append(test_f1)
+    
+    # 평균 결과 계산
+    def _mean(v):
+        return float(np.mean(v)) if len(v) > 0 else float("nan")
+    
+    val_avg = {k: _mean(v) for k, v in val_metrics.items()}
+    test_avg = {k: _mean(v) for k, v in test_metrics.items()}
+    
+    print("\n=== Validation Averages over 5 runs ===")
+    print(f"Val Accuracy: {val_avg['accuracy']:.4f}, Val Precision: {val_avg['precision']:.4f}, Val Recall: {val_avg['recall']:.4f}, Val F1: {val_avg['f1']:.4f}")
+    
+    print("\n=== Test Averages over 5 runs ===")
+    print(f"Test Accuracy: {test_avg['accuracy']:.4f}, Test Precision: {test_avg['precision']:.4f}, Test Recall: {test_avg['recall']:.4f}, Test F1: {test_avg['f1']:.4f}")
+    
+    # wandb summary에 평균 기록
+    wandb.summary["val_accuracy_mean"] = val_avg["accuracy"]
+    wandb.summary["val_precision_mean"] = val_avg["precision"]
+    wandb.summary["val_recall_mean"] = val_avg["recall"]
+    wandb.summary["val_f1_mean"] = val_avg["f1"]
+    
+    wandb.summary["test_accuracy_mean"] = test_avg["accuracy"]
+    wandb.summary["test_precision_mean"] = test_avg["precision"]
+    wandb.summary["test_recall_mean"] = test_avg["recall"]
+    wandb.summary["test_f1_mean"] = test_avg["f1"]
+    
+    return last_model, tokenizer, {"val": val_avg, "test": test_avg}
+
+
+def save_model(model, tokenizer, model_path: str):
+    """
+    모델 및 토크나이저 저장
+    
+    Args:
+        model: 학습된 모델
+        tokenizer: 토크나이저
+        model_path: 모델 저장 경로 (상대경로)
+    """
+    base_path = Path(__file__).parent.parent
+    model_full_path = base_path / model_path
+    model_full_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    torch.save(model.state_dict(), model_full_path)
+    print(f"💾 모델 저장: {model_full_path}")
+
+
+def main():
+    """메인 함수"""
+    parser = argparse.ArgumentParser(description="LSTM 모델 학습 및 평가")
+    parser.add_argument("--data", type=str, default="dataset/total_dataset.csv", help="데이터 파일 경로 (상대경로)")
+    parser.add_argument("--model_path", type=str, default="model/lstm_voicephishing.pt", help="모델 저장 경로 (상대경로)")
+    parser.add_argument("--num_runs", type=int, default=5, help="실행 횟수")
+    parser.add_argument("--embed_dim", type=int, default=128, help="임베딩 차원")
+    parser.add_argument("--hidden_dim", type=int, default=256, help="히든 차원")
+    parser.add_argument("--num_layers", type=int, default=2, help="LSTM 레이어 수")
+    parser.add_argument("--dropout", type=float, default=0.3, help="드롭아웃 비율")
+    parser.add_argument("--batch_size", type=int, default=16, help="배치 크기")
+    parser.add_argument("--eval_batch_size", type=int, default=32, help="평가 배치 크기")
+    parser.add_argument("--learning_rate", type=float, default=2e-4, help="학습률")
+    parser.add_argument("--epochs", type=int, default=10, help="에포크 수")
+    parser.add_argument("--max_len", type=int, default=1024, help="최대 길이")
+    parser.add_argument("--seed", type=int, default=42, help="시드 값")
+    parser.add_argument("--device", type=str, default=None, help="디바이스 (cuda/cpu, None이면 자동 선택)")
+    parser.add_argument("--wandb_project", type=str, default="Voicephishing", help="WandB 프로젝트명")
+    parser.add_argument("--wandb_name", type=str, default=None, help="WandB 실행명 (None이면 자동 생성)")
+    args = parser.parse_args()
+    
+    device = args.device if args.device else (torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+    wandb.init(project=args.wandb_project, name=args.wandb_name or f"lstm_{args.num_runs}runs", config={
+        "model": "LSTM", "embed_dim": args.embed_dim, "hidden_dim": args.hidden_dim, "num_layers": args.num_layers,
+        "dropout": args.dropout, "batch_size": args.batch_size, "eval_batch_size": args.eval_batch_size,
+        "learning_rate": args.learning_rate, "epochs": args.epochs, "max_len": args.max_len, "num_runs": args.num_runs,
+        "split_ratio": "train 0.70, val 0.15, test 0.15"
+    })
+    
+    try:
+        X_all, y_all = load_data(args.data)
+        model, tokenizer, metrics = train_and_evaluate(
+            X_all=X_all, y_all=y_all, num_runs=args.num_runs, embed_dim=args.embed_dim, hidden_dim=args.hidden_dim,
+            num_layers=args.num_layers, dropout=args.dropout, batch_size=args.batch_size, eval_batch_size=args.eval_batch_size,
+            learning_rate=args.learning_rate, epochs=args.epochs, max_len=args.max_len, seed=args.seed, device=device
+        )
+        if model is not None:
+            save_model(model, tokenizer, args.model_path)
+            try:
+                wandb.save(str(Path(__file__).parent.parent / args.model_path))
+            except Exception:
+                pass
+        print("\n✅ 학습 및 평가 완료!")
+    except Exception as e:
+        print(f"❌ 오류 발생: {e}")
+        raise
+    finally:
+        wandb.finish()
+
+
+if __name__ == "__main__":
+    main()
+
