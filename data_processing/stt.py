@@ -256,7 +256,7 @@ def main():
     parser.add_argument(
         "--output",
         type=str,
-        default="transcriptions.csv",
+        default="fss_dataset.csv",
         help="출력 CSV 파일 경로 (상대경로, 폴더 처리 시만 사용)"
     )
     parser.add_argument(
