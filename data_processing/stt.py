@@ -241,43 +241,12 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description="음성 파일을 텍스트로 변환 (STT)")
-    parser.add_argument(
-        "--folder",
-        type=str,
-        default=None,
-        help="처리할 폴더 경로 (상대경로)"
-    )
-    parser.add_argument(
-        "--file",
-        type=str,
-        default=None,
-        help="처리할 단일 파일 경로 (상대경로)"
-    )
-    parser.add_argument(
-        "--output",
-        type=str,
-        default="fss_dataset.csv",
-        help="출력 CSV 파일 경로 (상대경로, 폴더 처리 시만 사용)"
-    )
-    parser.add_argument(
-        "--model",
-        type=str,
-        default="openai/whisper-large-v3",
-        help="Whisper 모델명"
-    )
-    parser.add_argument(
-        "--device",
-        type=str,
-        default=None,
-        help="디바이스 (cuda/cpu, None이면 자동 선택)"
-    )
-    parser.add_argument(
-        "--extensions",
-        type=str,
-        nargs="+",
-        default=[".mp4", ".wav", ".mp3", ".m4a"],
-        help="처리할 파일 확장자"
-    )
+    parser.add_argument("--folder", type=str, default=None, help="처리할 폴더 경로 (상대경로)")
+    parser.add_argument("--file", type=str, default=None, help="처리할 단일 파일 경로 (상대경로)")
+    parser.add_argument("--output", type=str, default="fss_dataset.csv", help="출력 CSV 파일 경로 (상대경로, 폴더 처리 시만 사용)")
+    parser.add_argument("--model", type=str, default="openai/whisper-large-v3", help="Whisper 모델명")
+    parser.add_argument("--device", type=str, default=None, help="디바이스 (cuda/cpu, None이면 자동 선택)")
+    parser.add_argument("--extensions", type=str, nargs="+", default=[".mp4", ".wav", ".mp3", ".m4a"], help="처리할 파일 확장자")
     
     args = parser.parse_args()
     
