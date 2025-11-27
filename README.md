@@ -1,74 +1,74 @@
-# 🚀 Efficient Korean Voice-Phishing Detection using QLORA-tuned Small Language Models (QLoRA 기반 경량 언어 모델을 활용한 효율적인 한국어 보이스피싱 탐지)
+# 🚀 Efficient Korean Voice-Phishing Detection using QLORA-tuned Small Language Models
 
-## 💡 프로젝트 개요 (Project Overview)
+## 💡 Project Overview
 
-보이스피싱 범죄의 지능화와 피해 규모 증가에 대응하여, 본 프로젝트는 **효율적이고 정확한 (efficient and accurate)** 자동 탐지 시스템 구축을 목표로 합니다. 기존 **LLM 기반 방법론 (LLM-based approach)**의 한계점인 막대한 연산 비용과 실제 데이터셋의 심각한 **클래스 불균형 (class imbalance)** 문제를 해결하기 위해, **경량 언어 모델(SLM, Small Language Models)** 기반의 최적화된 학습 프레임워크를 제안합니다.
+Responding to the increasing sophistication of voice-phishing crimes and the resulting escalation in damage, this project aims to establish an **efficient and accurate** automated detection system. To overcome the limitations of conventional **LLM-based approaches**, such as prohibitive computational costs and the severe **class imbalance** inherent in real-world datasets, we propose an optimized training framework based on **Small Language Models (SLMs)**.
 
-### 핵심 기여 3가지 (Three Key Contributions)
-* **1. 메모리 효율성 극대화 (Maximizing Memory Efficiency):** Synatra, Kanana, Qwen 등 SLM에 **QLoRA** 기법을 적용하여 메모리 효율적인 정밀 튜닝 (memory-efficient fine-tuning)을 수행합니다.
-* **2. 데이터 불균형 해소 (Mitigating Data Imbalance):** **다국어 Back-Translation (Multilingual Back-Translation)**을 통한 데이터 증강으로 불균형 문제를 완화하고 모델의 일반화 능력을 향상시킵니다.
-* **3. 긴 문맥 처리 (Long-Context Processing):** SLM의 제한된 컨텍스트 길이를 극복하기 위해 **Overlapping Sliding Window** 기반의 텍스트 분할 전략 (text splitting strategy)을 도입합니다.
+### Three Core Contributions
+* **1. Maximizing Memory Efficiency:** We apply the **QLoRA** technique to SLMs such as Synatra, Kanana, and Qwen to perform memory-efficient fine-tuning.
+* **2. Mitigating Data Imbalance:** We alleviate the class-imbalance problem and enhance the model's generalization capability through data augmentation using **Multilingual Back-Translation**.
+* **3. Long Context Processing:** We introduce a text-splitting strategy based on **Overlapping Sliding Windows** to overcome the limited context length of SLMs.
 
 ---
 
-## 🏗️ 아키텍처 파이프라인 (Architecture Pipeline)
+## 🏗️ Architecture Pipeline
 
-<img src="image/model_architecture.png" alt="파이프라인" width="750"/>
+<img src="image/model_architecture.png" alt="Pipeline" width="750"/>
 
-다음은 데이터 준비부터 학습 및 평가에 이르는 전체 워크플로우를 보여주는 다이어그램입니다 (The following diagram illustrates the entire workflow from data preparation to training and evaluation).
+The following diagram illustrates the complete workflow from data preparation to training and evaluation.
 
-### 1. 💾 데이터 준비 및 증강 (Data Preparation & Augmentation)
+### 1. 💾 Data Preparation & Augmentation
 
-* [cite_start]**데이터셋 구축 (Dataset Construction):** **KorCCVi** [cite: 104]와 **금융감독원(FSS)** 공개 오디오 파일을 **Whisper-large-v3**로 전사하여 한국어 보이스피싱 텍스트 데이터셋을 구축했습니다 (Korean voice-phishing text dataset was built by transcribing KorCCVi and FSS audio files using Whisper-large-v3).
-* **Back-Translation (BT):** 정상 대화 대비 현저히 부족한 피싱 데이터를 보강하기 위해, 한국어 텍스트를 **영어, 중국어, 일본어** 등으로 번역했다가 다시 한국어로 재번역하는 **다국어 BT**를 적용했습니다 (Multilingual BT was applied using English, Chinese, and Japanese to augment scarce phishing data).
-    > **결과 (Result):** **BT-ALL** 전략을 사용했을 때 모든 모델의 성능이 일관되게 향상되었으며, 특히 Qwen 모델의 F1-Score가 **0.2581에서 0.6213**으로 대폭 상승했습니다 (BT-ALL consistently improved performance, with Qwen's F1-Score substantially increasing from 0.2581 to 0.6213).
+* [cite_start]**Dataset Construction:** We constructed a Korean voice-phishing text dataset by transcribing publicly available audio files from **KorCCVi** [cite: 104] and the **Financial Supervisory Service (FSS)** using **Whisper-large-v3**.
+* **Back-Translation (BT):** To augment the scarce phishing data compared to normal conversations, we applied **Multilingual BT**, which translates Korean text into languages such as **English, Chinese, and Japanese** and then translates it back to Korean.
+    > **Result:** The **BT-ALL** strategy consistently improved the performance of all models. Notably, the F1-Score of the Qwen model saw a substantial increase from **0.2581 to 0.6213**.
 
-### 2. ✂️ 문장 분할 전략 (Text Segmentation Strategy)
+### 2. ✂️ Text Segmentation Strategy
 
-SLM의 최대 입력 길이를 초과하는 긴 대화 텍스트 처리를 위해 세 가지 분할 전략을 비교했습니다 (Three segmentation strategies were compared for processing long conversation texts exceeding the SLM's maximum input length).
+We compared three segmentation strategies for processing long conversational texts that exceed the maximum input length of SLMs.
 
-| 전략 (Strategy) | 설명 (Description) | F1-Score (Synatra) |
+| Strategy | Description | F1-Score (Synatra) |
 | :--- | :--- | :--- |
-| **Baseline** | 토크나이저의 기본 Truncation 기능 사용 (Utilizing the tokenizer's default truncation). | 0.9745 |
-| **Head & Tail** | 피싱 핵심 정보가 앞/뒤에 집중된다는 가설 기반으로 분할 (Splitting based on the hypothesis that key information is concentrated at the beginning/end). | 0.9734 |
-| **Sliding Window (SW-512)** | **25% 중첩 (25% overlap)**을 가지는 고정 길이 청크로 분할하여 컨텍스트 손실 최소화 (Dividing into fixed-length chunks with a 25% overlap to minimize context disruption). | **0.9875** |
+| **Baseline** | Uses the tokenizer's default truncation function. | 0.9745 |
+| **Head & Tail** | Segmentation based on the hypothesis that key phishing information is concentrated at the beginning and end. | 0.9734 |
+| **Sliding Window (SW-512)** | Segmentation into fixed-length chunks with **25% overlap** to minimize context loss. | **0.9875** |
 
-* **최적 결과 (Optimal Result):** **Sliding Window (SW-512)** 전략이 가장 우수한 성능을 보였습니다 (SW-512 strategy showed the best performance). 이는 대화 중간 부분에 포함된 컨텍스트가 탐지에 중요한 역할을 하며, 단순한 시작/끝 부분 집중 가설과는 상반됨을 시사합니다 (This suggests that intermediate context plays a crucial role in detection, contradicting the simple Head & Tail hypothesis).
-
----
-
-## 🧠 sLLM 학습 및 최적화 (sLLM Training & Optimization)
-
-### 모델 선정 및 QLoRA 적용 (Model Selection and QLoRA Application)
-* **모델 (Models):** 디코더-온리 아키텍처 (decoder-only architecture), 파라미터 수 3B 미만 (parameter count below 3B), 한국어 이해 능력을 기준으로 **Synatra(1.3B)**, **Kanana(2.1B)**, **Qwen (0.5B)** 모델을 선정했습니다 (Synatra, Kanana, and Qwen models were selected based on specific criteria).
-* **QLoRA:** **4-bit 정밀도 (4-bit precision)**로 사전 학습된 모델 가중치를 양자화하고, **LoRA** 모듈을 주요 어텐션 모듈에 적용하여 학습 메모리 사용량을 대폭 절감했습니다 (QLoRA was used to quantize pretrained weights to 4-bit precision and apply LoRA modules, substantially reducing training memory usage).
+* **Optimal Result:** The **Sliding Window (SW-512)** strategy showed the best performance. This suggests that the context embedded in the intermediate sections of the conversation plays a crucial role in detection, contrary to the simple hypothesis that key information is concentrated only at the beginning and end.
 
 ---
 
-## 📈 주요 정량적/정성적 결과 (Key Results: Quantitative & Qualitative)
+## 🧠 sLLM Training & Optimization
 
-### 1. 정량적 성능 비교 (Quantitative Performance Comparison)
+### Model Selection and QLoRA Application
+* **Models:** We selected **Synatra (1.3B)**, **Kanana (2.1B)**, and **Qwen (0.5B)** based on criteria: decoder-only architecture, parameter count below 3B, and strong Korean language comprehension.
+* **QLoRA:** We quantized the weights of the pre-trained model to **4-bit precision** and applied the **LoRA** module to the primary attention layers, significantly reducing memory consumption during training.
 
-제안된 통합 프레임워크 (**BT-ALL** 및 **SW-512** 적용)는 기존 머신러닝 및 PLM(KOBERT) 기반 모델들을 크게 능가하는 성능을 입증했습니다 (The proposed integrated framework significantly surpassed conventional ML and PLM (KOBERT) baselines).
+---
 
-| Category (범주) | Model (모델) | F1-Score |
+## 📈 Key Quantitative and Qualitative Results
+
+### 1. Quantitative Performance Comparison
+
+The proposed integrated framework (using **BT-ALL** and **SW-512**) demonstrated performance that significantly surpassed conventional Machine Learning and PLM (KOBERT) based models.
+
+| Category | Model | F1-Score |
 | :--- | :--- | :--- |
-| Proposed SLLM (제안 모델) | **Synatra** | **0.9938** |
-| Proposed SLLM (제안 모델) | **Kanana** | **0.9938** |
-| PLM (Baseline) (베이스라인) | KOBERT | 0.6433 |
-| ML Models (ML 모델) | Random Forest | 0.9835 |
+| Proposed SLLM | **Synatra** | **0.9938** |
+| Proposed SLLM | **Kanana** | **0.9938** |
+| PLM (Baseline) | KOBERT | 0.6433 |
+| ML Models | Random Forest | 0.9835 |
 
-### 2. 정성적 해석 가능성 (Qualitative Interpretability)
+### 2. Qualitative Interpretability
 
-SLM 채택의 주요 동기인 **해석 가능성(Interpretability)**을 검증했습니다 (Interpretability, a key motivation for adopting SLMs, was verified).
-* **Synatra/Kanana:** 높은 F1-Score에 부합하게 **'기관 사칭 (impersonation of authority)'**, **'긴급 유도 (induction of urgency)'** 등 피싱의 핵심 패턴을 정확하게 식별하고, 분류 결정에 대한 합리적인 근거를 제공했습니다 (Accurately identified core phishing patterns and provided clear rationales). 특히 Kanana는 분석 개요, 결정 근거, 결론을 포함하는 구조화된 형식으로 해석을 제공했습니다 (Kanana provided interpretations in a structured format).
-* **Qwen:** 가장 낮은 F1-Score를 기록한 Qwen은 피싱 컨텍스트를 이해하지 못하고 **'Hallucination'** 현상을 보이며 부정확한 결과와 근거를 생성했습니다 (Qwen, with the lowest F1-Score, suffered from 'Hallucination' and failed to comprehend the phishing context).
+We verified the **Interpretability**, a primary motivation for employing SLMs.
+* **Synatra/Kanana:** Consistent with their high F1-Scores, these models accurately identified core phishing patterns, such as **'impersonation of authority'** and **'induction of urgency'**, and provided reasonable rationales for their classification decisions. Kanana, in particular, offered interpretations in a structured format, including an analysis overview, decision rationale, and conclusion.
+* **Qwen:** Qwen, which recorded the lowest F1-Score, failed to comprehend the phishing context and exhibited **'Hallucination'**, generating inaccurate results and rationales.
 
 ---
 
-## 🧑‍💻 시작하기 (Getting Started)
+## 🧑‍💻 Getting Started
 
-### 1. 저장소 클론 (Clone Repository)
-'''bash
-git clone [https://github.com/junhoeKu/Voice-Phishing-Detection](https://github.com/junhoeKu/Voice-Phishing-Detection) # 공식 저장소 URL (Official Repository URL)
+### 1. Repository Clone
+```bash
+git clone [https://github.com/junhoeKu/Voice-Phishing-Detection](https://github.com/junhoeKu/Voice-Phishing-Detection)
 cd Voice-Phishing-Detection
