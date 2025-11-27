@@ -13,6 +13,8 @@
 
 ## 🏗️ 아키텍처 파이프라인 (Architecture Pipeline)
 
+<img src="image/model_architecture.png" alt="파이프라인" width="750"/>
+
 다음은 데이터 준비부터 학습 및 평가에 이르는 전체 워크플로우를 보여주는 다이어그램입니다.
 
 ### 1. 💾 데이터 준비 및 증강 (Data Preparation & Augmentation)
