@@ -1,0 +1,13 @@
+# 주요 딥러닝 및 NLP 라이브러리 (pip install -U -q ...)
+datasets
+peft
+transformers==4.45.2
+bitsandbytes
+wandb
+sentencepiece
+mlflow
+accelerate
+gradio
+
+# 참고: deepspeed 패키지는 별도로 설치해야 합니다.
+# pip install --upgrade -q deepspeed

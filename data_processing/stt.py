@@ -1,18 +1,3 @@
-"""
-Speech-to-Text (STT) 모듈
-
-Whisper 모델을 사용하여 음성 파일을 텍스트로 변환합니다.
-긴 오디오 파일은 30초 청크로 나누어 처리합니다.
-
-사용 예시:
-    from data_processing.stt import transcribe_folder
-    
-    df = transcribe_folder(
-        folder_path="audio_files",
-        output_path="transcriptions.csv"
-    )
-"""
-
 import os
 import numpy as np
 import pandas as pd
