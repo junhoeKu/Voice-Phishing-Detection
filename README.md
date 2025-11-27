@@ -49,9 +49,10 @@ STT 데이터의 긴 문맥을 효과적으로 처리하고 문장 내 관계를
 프로젝트를 로컬 환경에서 실행하고 실험을 재현하는 방법입니다.
 
 ### 1. 저장소 클론
-```bash
+'''bash
 git clone [프로젝트_Github_URL]
 cd [프로젝트_디렉토리]
+'''
 
 # 🚀 Efficient Korean Voice-Phishing Detection using QLORA-tuned Small Language Models
 
