@@ -15,7 +15,7 @@ KorCCV1, FSS 데이터셋과 **Whisper-large-v3**를 활용하여 대규모 STT 
 
 ### 2. Data Augmentation (데이터 증강)
 준비된 학습 데이터셋에 **Back-Translation (BT)** 기법을 적용하여 모델의 일반화 성능을 높입니다.
-* **BT-En, BT-Ia, BT-all** 등 다양한 백 트랜슬레이션 전략을 실험합니다.
+* **BT-En, BT-Ch, BT-Ja, BT-all** 등 다양한 백 트랜슬레이션 전략을 실험합니다.
 
 ### 3. Sentence Segmentation (문장 분할)
 STT 데이터의 긴 문맥을 효과적으로 처리하고 문장 내 관계를 학습할 수 있도록 데이터를 구조화합니다.
