@@ -19,7 +19,7 @@ The following diagram illustrates the complete workflow from data preparation to
 
 ### 1. 💾 Data Preparation & Augmentation
 
-* [cite_start]**Dataset Construction:** We constructed a Korean voice-phishing text dataset by transcribing publicly available audio files from **KorCCVi** [cite: 104] and the **Financial Supervisory Service (FSS)** using **Whisper-large-v3**.
+* **Dataset Construction:** We constructed a Korean voice-phishing text dataset by transcribing publicly available audio files from **KorCCVi** and the **Financial Supervisory Service (FSS)** using **Whisper-large-v3**.
 * **Back-Translation (BT):** To augment the scarce phishing data compared to normal conversations, we applied **Multilingual BT**, which translates Korean text into languages such as **English, Chinese, and Japanese** and then translates it back to Korean.
     > **Result:** The **BT-ALL** strategy consistently improved the performance of all models. Notably, the F1-Score of the Qwen model saw a substantial increase from **0.2581 to 0.6213**.
 
