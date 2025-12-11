@@ -1,7 +1,7 @@
 # 주요 딥러닝 및 NLP 라이브러리 (pip install -U -q ...)
 datasets
 peft
-transformers==4.45.2
+transformers
 bitsandbytes
 wandb
 sentencepiece
