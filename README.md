@@ -66,11 +66,10 @@ One of the primary advantages of our SLM approach is the drastic reduction in tr
 
 ---
 
-### 2. Qualitative Interpretability
+## 🔍 Qualitative Interpretability
 
-We verified the **Interpretability**, a primary motivation for employing SLMs.
-* **Synatra/Kanana:** Consistent with their high F1-Scores, these models accurately identified core phishing patterns, such as **'impersonation of authority'** and **'induction of urgency'**, and provided reasonable rationales for their classification decisions. Kanana, in particular, offered interpretations in a structured format, including an analysis overview, decision rationale, and conclusion.
-* **Qwen:** Qwen, which recorded the lowest F1-Score, failed to comprehend the phishing context and exhibited **'Hallucination'**, generating inaccurate results and rationales.
+* **High-Performing SLMs (Synatra/Kanana):** These models accurately identified core phishing patterns such as **'impersonation of authority'** and **'induction of urgency'**. Kanana provided structured rationales including analysis overviews and decision conclusions.
+* **Low-Performing SLMs (Qwen):** Despite augmentation, the smallest models (0.5B) occasionally exhibited **'Hallucination'**, failing to fully grasp the nuanced phishing context compared to the 1B+ parameter models.
 
 ---
 
