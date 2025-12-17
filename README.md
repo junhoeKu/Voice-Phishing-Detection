@@ -33,26 +33,21 @@ Processing long conversational texts using different segmentation methods (based
 
 ---
 
-## 🧠 sLLM Training & Optimization
+## 🧠 Model Training & Efficiency Analysis
 
-### Model Selection and QLoRA Application
-* **Models:** We selected **Synatra (1.3B)**, **Kanana (2.1B)**, and **Qwen (0.5B)** based on criteria: decoder-only architecture, parameter count below 3B, and strong Korean language comprehension.
-* **QLoRA:** We quantized the weights of the pre-trained model to **4-bit precision** and applied the **LoRA** module to the primary attention layers, significantly reducing memory consumption during training.
-
----
-
-## 📈 Key Quantitative and Qualitative Results
+We evaluated a diverse range of models, from sub-3B SLMs to larger 10B+ models, using **QLoRA** on a single **NVIDIA A100 GPU**.
 
 ### 1. Quantitative Performance Comparison
+The integrated framework (BT-ALL + Sliding Window) outperformed traditional ML and PLM baselines.
 
-The proposed integrated framework (using **BT-ALL** and **SW-512**) demonstrated performance that significantly surpassed conventional Machine Learning and PLM (KOBERT) based models.
-
-| Category | Model | F1-Score |
-| :--- | :--- | :--- |
-| Proposed SLLM | **Synatra** | **0.9938** |
-| Proposed SLLM | **Kanana** | **0.9938** |
-| PLM (Baseline) | KOBERT | 0.6433 |
-| ML Models | Random Forest | 0.9835 |
+| Category | Model | Params | F1-Score |
+| :--- | :--- | :--- | :--- |
+| **Proposed SLM** | **Synatra** | 1.3B | **0.9938** |
+| **Proposed SLM** | **Kanana** | 2.1B | **0.9938** |
+| **Proposed SLM** | **Bllossom** | 8B | 0.9812 |
+| **Proposed SLM** | **Solar** | 10.7B | **0.9969** |
+| PLM (Baseline) | KoBERT | 110M | 0.6433 |
+| ML Models | Random Forest | - | 0.9835 |
 
 ### 2. Qualitative Interpretability
 
