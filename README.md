@@ -42,11 +42,12 @@ The integrated framework (BT-ALL + Sliding Window) outperformed traditional ML a
 
 | Category | Model | Params | F1-Score |
 | :--- | :--- | :--- | :--- |
-| **Proposed SLM** | **Synatra** | 1.3B | **0.9938** |
-| **Proposed SLM** | **Kanana** | 2.1B | **0.9938** |
-| **Proposed SLM** | **Bllossom** | 8B | 0.9812 |
-| **Proposed SLM** | **Solar** | 10.7B | **0.9969** |
-| PLM (Baseline) | KoBERT | 110M | 0.6433 |
+| **Proposed SLM** | **Synatra** | **0.9938** |
+| **Proposed SLM** | **Qwen** | **0.8283** |
+| **Proposed SLM** | **Kanana** | **0.9938** |
+| **Proposed SLM** | **Bllossom** | 0.9812 |
+| **Proposed SLM** | **Solar** | **0.9969** |
+| PLM | KoBERT | 0.6433 |
 | ML Models | Random Forest | - | 0.9835 |
 
 ### 2. Qualitative Interpretability
