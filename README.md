@@ -1,13 +1,13 @@
-# 🚀 Efficient Korean Voice-Phishing Detection using QLORA-tuned Small Language Models
+# 🚀 Efficient Korean Voice-Phishing Detection using QLoRA-tuned Small Language Models (SLMs)
 
 ## 💡 Project Overview
 
 Responding to the increasing sophistication of voice-phishing crimes, this project establishes an **efficient and accurate** automated detection system. We overcome the limitations of conventional **LLM-based approaches**, such as prohibitive computational costs, by proposing an optimized training framework based on **Small Language Models (SLMs)**.
 
 ### Three Core Contributions
-* **1. Maximizing Memory Efficiency:** We apply the **QLoRA** technique to SLMs such as Synatra, Kanana, and Qwen to perform memory-efficient fine-tuning.
-* **2. Mitigating Data Imbalance:** We alleviate the class-imbalance problem and enhance the model's generalization capability through data augmentation using **Multilingual Back-Translation**.
-* **3. Long Context Processing:** We introduce a text-splitting strategy based on **Overlapping Sliding Windows** to overcome the limited context length of SLMs.
+* **1. Maximizing Memory Efficiency:** Application of **QLoRA** to models like Synatra, Kanana, and Bllossom for memory-efficient 4-bit fine-tuning.
+* **2. Mitigating Data Imbalance:** Enhanced generalization through **Multilingual Back-Translation (BT-ALL)**, improving minority class detection.
+* **3. Long Context Processing:** Implementation of an **Overlapping Sliding Window** strategy to minimize context loss in long conversational transcripts.
 
 ---
 
