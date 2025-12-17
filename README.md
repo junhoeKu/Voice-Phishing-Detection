@@ -20,7 +20,7 @@ The following diagram illustrates the complete workflow from data preparation to
 ### 1. 💾 Data Preparation & Augmentation
 * **Dataset:** Transcribed transcripts from **KorCCVi** and **Financial Supervisory Service (FSS)** using **Whisper-large-v3**.
 * **Back-Translation (BT):** Applied English, Chinese, and Japanese BT to alleviate class imbalance.
-    > **Result:** The **BT-ALL** strategy significantly improved performance across all models. For instance, the Qwen model's F1-Score increased from **0.2581 to 0.8283** through this augmentation.
+    > **Result:** The **BT-ALL** strategy significantly improved performance across all models. For instance, the Qwen model's F1-Score increased from **0.2581 to 0.6213** through this augmentation.
 
 ### 2. ✂️ Text Segmentation Strategy
 Processing long conversational texts using different segmentation methods (based on Synatra):
