@@ -2,7 +2,7 @@
 
 ## 💡 Project Overview
 
-Responding to the increasing sophistication of voice-phishing crimes and the resulting escalation in damage, this project aims to establish an **efficient and accurate** automated detection system. To overcome the limitations of conventional **LLM-based approaches**, such as prohibitive computational costs and the severe **class imbalance** inherent in real-world datasets, we propose an optimized training framework based on **Small Language Models (SLMs)**.
+Responding to the increasing sophistication of voice-phishing crimes, this project establishes an **efficient and accurate** automated detection system. We overcome the limitations of conventional **LLM-based approaches**, such as prohibitive computational costs, by proposing an optimized training framework based on **Small Language Models (SLMs)**.
 
 ### Three Core Contributions
 * **1. Maximizing Memory Efficiency:** We apply the **QLoRA** technique to SLMs such as Synatra, Kanana, and Qwen to perform memory-efficient fine-tuning.
