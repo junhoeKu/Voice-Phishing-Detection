@@ -50,6 +50,22 @@ The integrated framework (BT-ALL + Sliding Window) outperformed traditional ML a
 | PLM | KoBERT | 0.6433 |
 | ML Models | Random Forest | 0.9835 |
 
+### 2. Computational & Resource Efficiency
+One of the primary advantages of our SLM approach is the drastic reduction in training time and inference latency.
+
+| Model | Training Time | Inference Latency (100 tokens) |
+| :--- | :--- | :--- |
+| **Synatra** | **2h 07m** | **2.62s** |
+| **Qwen** | **1h 42m** | **2.70s** |
+| **Kanana** | 2h 41m | 3.53s |
+| **Bllossom** | 5h 45m | 3.60s |
+| **Solar** | 14h 13m | 5.34s |
+
+* **Training Efficiency:** Synatra and Kanana reduced training time by over **80%** compared to Solar (10.7B) while maintaining comparable F1-Scores.
+* **Real-time Feasibility:** Synatra achieved an inference speed approximately **2x faster** than Solar, making it ideal for real-time detection environments.
+
+---
+
 ### 2. Qualitative Interpretability
 
 We verified the **Interpretability**, a primary motivation for employing SLMs.
