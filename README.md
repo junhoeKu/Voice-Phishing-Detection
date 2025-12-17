@@ -23,16 +23,13 @@ The following diagram illustrates the complete workflow from data preparation to
     > **Result:** The **BT-ALL** strategy significantly improved performance across all models. For instance, the Qwen model's F1-Score increased from **0.2581 to 0.8283** through this augmentation.
 
 ### 2. ✂️ Text Segmentation Strategy
+Processing long conversational texts using different segmentation methods (based on Synatra):
 
-We compared three segmentation strategies for processing long conversational texts that exceed the maximum input length of SLMs.
-
-| Strategy | Description | F1-Score (Synatra) |
+| Strategy | Description | F1-Score |
 | :--- | :--- | :--- |
-| **Baseline** | Uses the tokenizer's default truncation function. | 0.9745 |
-| **Head & Tail** | Segmentation based on the hypothesis that key phishing information is concentrated at the beginning and end. | 0.9734 |
-| **Sliding Window (SW-512)** | Segmentation into fixed-length chunks with **25% overlap** to minimize context loss. | **0.9875** |
-
-* **Optimal Result:** The **Sliding Window (SW-512)** strategy showed the best performance. This suggests that the context embedded in the intermediate sections of the conversation plays a crucial role in detection, contrary to the simple hypothesis that key information is concentrated only at the beginning and end.
+| **Baseline** | Default tokenizer truncation. | 0.9745 |
+| **Head & Tail** | Keeping only the start and end of the transcript. | 0.9734 |
+| **Sliding Window** | Chunks of 512 tokens with **25% overlap**. | **0.9875** |
 
 ---
 
