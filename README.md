@@ -40,7 +40,7 @@ We evaluated a diverse range of models, from sub-3B SLMs to larger 10B+ models, 
 ### 1. Quantitative Performance Comparison
 The integrated framework (BT-ALL + Sliding Window) outperformed traditional ML and PLM baselines.
 
-| Category | Model | Params | F1-Score |
+| Category | Model | F1-Score |
 | :--- | :--- | :--- | :--- |
 | **Proposed SLM** | **Synatra** | **0.9938** |
 | **Proposed SLM** | **Qwen** | **0.8283** |
