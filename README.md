@@ -1,13 +1,13 @@
-# 🚀 Efficient Korean Voice-Phishing Detection using QLORA-tuned Small Language Models
+# 🚀 Efficient Korean Voice-Phishing Detection using QLoRA-tuned Small Language Models (SLMs)
 
 ## 💡 Project Overview
 
-Responding to the increasing sophistication of voice-phishing crimes and the resulting escalation in damage, this project aims to establish an **efficient and accurate** automated detection system. To overcome the limitations of conventional **LLM-based approaches**, such as prohibitive computational costs and the severe **class imbalance** inherent in real-world datasets, we propose an optimized training framework based on **Small Language Models (SLMs)**.
+Responding to the increasing sophistication of voice-phishing crimes, this project establishes an **efficient and accurate** automated detection system. We overcome the limitations of conventional **LLM-based approaches**, such as prohibitive computational costs, by proposing an optimized training framework based on **Small Language Models (SLMs)**.
 
 ### Three Core Contributions
-* **1. Maximizing Memory Efficiency:** We apply the **QLoRA** technique to SLMs such as Synatra, Kanana, and Qwen to perform memory-efficient fine-tuning.
-* **2. Mitigating Data Imbalance:** We alleviate the class-imbalance problem and enhance the model's generalization capability through data augmentation using **Multilingual Back-Translation**.
-* **3. Long Context Processing:** We introduce a text-splitting strategy based on **Overlapping Sliding Windows** to overcome the limited context length of SLMs.
+* **1. Maximizing Memory Efficiency:** Application of **QLoRA** to models like Synatra, Kanana, and Bllossom for memory-efficient 4-bit fine-tuning.
+* **2. Mitigating Data Imbalance:** Enhanced generalization through **Multilingual Back-Translation (BT-ALL)**, improving minority class detection.
+* **3. Long Context Processing:** Implementation of an **Overlapping Sliding Window** strategy to minimize context loss in long conversational transcripts.
 
 ---
 
@@ -18,51 +18,58 @@ Responding to the increasing sophistication of voice-phishing crimes and the res
 The following diagram illustrates the complete workflow from data preparation to training and evaluation.
 
 ### 1. 💾 Data Preparation & Augmentation
-
-* **Dataset Construction:** We constructed a Korean voice-phishing text dataset by transcribing publicly available audio files from **KorCCVi** and the **Financial Supervisory Service (FSS)** using **Whisper-large-v3**.
-* **Back-Translation (BT):** To augment the scarce phishing data compared to normal conversations, we applied **Multilingual BT**, which translates Korean text into languages such as **English, Chinese, and Japanese** and then translates it back to Korean.
-    > **Result:** The **BT-ALL** strategy consistently improved the performance of all models. Notably, the F1-Score of the Qwen model saw a substantial increase from **0.2581 to 0.6213**.
+* **Dataset:** Transcribed transcripts from **KorCCVi** and **Financial Supervisory Service (FSS)** using **Whisper-large-v3**.
+* **Back-Translation (BT):** Applied English, Chinese, and Japanese BT to alleviate class imbalance.
+    > **Result:** The **BT-ALL** strategy significantly improved performance across all models. For instance, the Qwen model's F1-Score increased from **0.2581 to 0.6213** through this augmentation.
 
 ### 2. ✂️ Text Segmentation Strategy
+Processing long conversational texts using different segmentation methods (based on Synatra):
 
-We compared three segmentation strategies for processing long conversational texts that exceed the maximum input length of SLMs.
-
-| Strategy | Description | F1-Score (Synatra) |
+| Strategy | Description | F1-Score |
 | :--- | :--- | :--- |
-| **Baseline** | Uses the tokenizer's default truncation function. | 0.9745 |
-| **Head & Tail** | Segmentation based on the hypothesis that key phishing information is concentrated at the beginning and end. | 0.9734 |
-| **Sliding Window (SW-512)** | Segmentation into fixed-length chunks with **25% overlap** to minimize context loss. | **0.9875** |
-
-* **Optimal Result:** The **Sliding Window (SW-512)** strategy showed the best performance. This suggests that the context embedded in the intermediate sections of the conversation plays a crucial role in detection, contrary to the simple hypothesis that key information is concentrated only at the beginning and end.
+| **Baseline** | Default tokenizer truncation. | 0.9745 |
+| **Head & Tail** | Keeping only the start and end of the transcript. | 0.9734 |
+| **Sliding Window** | Chunks of 512 tokens with **25% overlap**. | **0.9875** |
 
 ---
 
-## 🧠 sLLM Training & Optimization
+## 🧠 Model Training & Efficiency Analysis
 
-### Model Selection and QLoRA Application
-* **Models:** We selected **Synatra (1.3B)**, **Kanana (2.1B)**, and **Qwen (0.5B)** based on criteria: decoder-only architecture, parameter count below 3B, and strong Korean language comprehension.
-* **QLoRA:** We quantized the weights of the pre-trained model to **4-bit precision** and applied the **LoRA** module to the primary attention layers, significantly reducing memory consumption during training.
-
----
-
-## 📈 Key Quantitative and Qualitative Results
+We evaluated a diverse range of models, from sub-3B SLMs to larger 10B+ models, using **QLoRA** on a single **NVIDIA A100 GPU**.
 
 ### 1. Quantitative Performance Comparison
-
-The proposed integrated framework (using **BT-ALL** and **SW-512**) demonstrated performance that significantly surpassed conventional Machine Learning and PLM (KOBERT) based models.
+The integrated framework (BT-ALL + Sliding Window) outperformed traditional ML and PLM baselines.
 
 | Category | Model | F1-Score |
 | :--- | :--- | :--- |
-| Proposed SLLM | **Synatra** | **0.9938** |
-| Proposed SLLM | **Kanana** | **0.9938** |
-| PLM (Baseline) | KOBERT | 0.6433 |
+| **Proposed SLM** | **Synatra** | **0.9938** |
+| **Proposed SLM** | **Qwen** | **0.8283** |
+| **Proposed SLM** | **Kanana** | **0.9938** |
+| **Proposed SLM** | **Bllossom** | 0.9812 |
+| **Proposed SLM** | **Solar** | **0.9969** |
+| PLM | KoBERT | 0.6433 |
 | ML Models | Random Forest | 0.9835 |
 
-### 2. Qualitative Interpretability
+### 2. Computational & Resource Efficiency
+One of the primary advantages of our SLM approach is the drastic reduction in training time and inference latency.
 
-We verified the **Interpretability**, a primary motivation for employing SLMs.
-* **Synatra/Kanana:** Consistent with their high F1-Scores, these models accurately identified core phishing patterns, such as **'impersonation of authority'** and **'induction of urgency'**, and provided reasonable rationales for their classification decisions. Kanana, in particular, offered interpretations in a structured format, including an analysis overview, decision rationale, and conclusion.
-* **Qwen:** Qwen, which recorded the lowest F1-Score, failed to comprehend the phishing context and exhibited **'Hallucination'**, generating inaccurate results and rationales.
+| Model | Training Time | Inference Latency (100 tokens) |
+| :--- | :--- | :--- |
+| **Synatra** | **2h 07m** | **2.62s** |
+| **Qwen** | **1h 42m** | **2.70s** |
+| **Kanana** | 2h 41m | 3.53s |
+| **Bllossom** | 5h 45m | 3.60s |
+| **Solar** | 14h 13m | 5.34s |
+
+* **Training Efficiency:** Synatra and Kanana reduced training time by over **80%** compared to Solar (10.7B) while maintaining comparable F1-Scores.
+* **Real-time Feasibility:** Synatra achieved an inference speed approximately **2x faster** than Solar, making it ideal for real-time detection environments.
+
+---
+
+## 🔍 Qualitative Interpretability
+
+* **High-Performing SLMs (Synatra/Kanana):** These models accurately identified core phishing patterns such as **'impersonation of authority'** and **'induction of urgency'**. Kanana provided structured rationales including analysis overviews and decision conclusions.
+* **Low-Performing SLMs (Qwen):** Despite augmentation, the smallest models (0.5B) occasionally exhibited **'Hallucination'**, failing to fully grasp the nuanced phishing context compared to the 1B+ parameter models.
 
 ---
 
