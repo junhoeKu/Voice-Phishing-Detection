@@ -231,8 +231,8 @@ def generate_sliding_window_datasets(
 if __name__ == "__main__":
     # 예시 1: 단일 데이터셋 생성
     result = apply_sliding_window(
-        input_csv_path="dataset/spam_bt_all.csv",
-        output_csv_path="dataset/spam_bt_all_512_25.csv",
+        input_csv_path="dataset/total_dataset.csv",
+        output_csv_path="dataset/sliding_window_512_25.csv",
         window_size=512,
         overlap_ratio=0.25
     )
